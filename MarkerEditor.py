@@ -164,7 +164,7 @@ class MarkerEditor(QMainWindow):
         <p>ⓒ 2024 <a href="https://www.youtube.com/@moonsvr">MoonServer Studios</a>. All rights reserved.</p>
         <hr>
         <p>
-        <a href="https://github.com/moon44432">License and source code</a><br>
+        <a href="https://github.com/moon44432/dmarker-editor">Source code</a><br>
         
         </p>
         """
@@ -448,7 +448,7 @@ class MarkerEditor(QMainWindow):
 
         # 선택된 경우 윤곽선 먼저 그리기
         if selected:
-            outline_pen = QPen(Qt.yellow, area['strokeWeight'] + 4, Qt.DashLine)
+            outline_pen = QPen(Qt.black, area['strokeWeight'] + 2, Qt.SolidLine)
             outline_polygon = self.scene.addPolygon(
                 QPolygonF(points + [points[0]]),
                 outline_pen,
@@ -700,7 +700,7 @@ class MarkerEditor(QMainWindow):
         self.properties_layout.addRow('Icon:', icon_combo)
 
         # "속성 업데이트" 버튼 추가
-        update_btn = QPushButton('Update Properties')
+        update_btn = QPushButton('Apply Properties')
         update_btn.clicked.connect(lambda: self.applyProperties())
         self.properties_layout.addRow(update_btn)
         
@@ -773,21 +773,45 @@ class MarkerEditor(QMainWindow):
             vertices_list.addItem(
                 f"({line['x'][i]}, {line['y'][i]}, {line['z'][i]})")
         self.properties_layout.addRow(vertices_label, vertices_list)
+
+        # 버튼들을 담을 버튼 그룹 추가
+        vertex_buttons = QWidget()
+        vertex_layout = QVBoxLayout(vertex_buttons)
+
+        move_btn = QPushButton('Move Vertex')
+        move_btn.setEnabled(False)
+        move_btn.clicked.connect(
+            lambda: self.startAddingVertex(set_id, line_id, 'lines', mode='move', vertex_index=vertices_list.currentRow()))
+        vertex_layout.addWidget(move_btn)
         
-        # Add vertex button
-        add_vertex_btn = QPushButton('Add Vertex')
-        add_vertex_btn.clicked.connect(
-            lambda: self.startAddingVertex(set_id, line_id, 'lines'))
-        self.properties_layout.addRow(add_vertex_btn)
+        # 선택된 정점 앞/뒤에 추가하는 버튼
+        add_before_btn = QPushButton('Add Vertex Before')
+        add_before_btn.setEnabled(False)
+        add_before_btn.clicked.connect(
+            lambda: self.addVertexBefore(set_id, line_id, vertices_list.currentRow(), 'lines'))
+        vertex_layout.addWidget(add_before_btn)
         
-        # Split line button
-        split_btn = QPushButton('Split Line')
+        add_after_btn = QPushButton('Add Vertex After')
+        add_after_btn.setEnabled(False)
+        add_after_btn.clicked.connect(
+            lambda: self.addVertexAfter(set_id, line_id, vertices_list.currentRow(), 'lines'))
+        vertex_layout.addWidget(add_after_btn)
+
+        # Split 버튼 수정
+        split_btn = QPushButton('Split Line at Selected Vertex')
+        split_btn.setEnabled(False)  # 초기에는 비활성화
         split_btn.clicked.connect(
-            lambda: self.splitLine(set_id, line_id))
-        self.properties_layout.addRow(split_btn)
+            lambda: self.splitLineAtVertex(set_id, line_id, vertices_list.currentRow()))
+        vertex_layout.addWidget(split_btn)
+        
+        # 정점이 선택되면 버튼들 활성화
+        vertices_list.currentRowChanged.connect(
+            lambda idx: [btn.setEnabled(idx >= 0) for btn in [move_btn, add_before_btn, add_after_btn, split_btn]])
+        
+        self.properties_layout.addRow('Vertex Actions:', vertex_buttons)
 
         # "속성 업데이트" 버튼 추가
-        update_btn = QPushButton('Update Properties')
+        update_btn = QPushButton('Apply Properties')
         update_btn.clicked.connect(self.applyProperties)
         self.properties_layout.addRow(update_btn)
         
@@ -869,15 +893,38 @@ class MarkerEditor(QMainWindow):
             vertices_list.addItem(
                 f"({area['x'][i]}, {area['z'][i]})")
         self.properties_layout.addRow(vertices_label, vertices_list)
+
+        # 버튼들을 담을 버튼 그룹 추가
+        vertex_buttons = QWidget()
+        vertex_layout = QVBoxLayout(vertex_buttons)
+
+        move_btn = QPushButton('Move Vertex')
+        move_btn.setEnabled(False)
+        move_btn.clicked.connect(
+            lambda: self.startAddingVertex(set_id, area_id, 'areas', mode='move', vertex_index=vertices_list.currentRow()))
+        vertex_layout.addWidget(move_btn)
         
-        # Add vertex button
-        add_vertex_btn = QPushButton('Add Vertex')
-        add_vertex_btn.clicked.connect(
-            lambda: self.startAddingVertex(set_id, area_id, 'areas'))
-        self.properties_layout.addRow(add_vertex_btn)
+        # 선택된 정점 앞/뒤에 추가하는 버튼
+        add_before_btn = QPushButton('Add Vertex Before')
+        add_before_btn.setEnabled(False)
+        add_before_btn.clicked.connect(
+            lambda: self.addVertexBefore(set_id, area_id, vertices_list.currentRow(), 'areas'))
+        vertex_layout.addWidget(add_before_btn)
+        
+        add_after_btn = QPushButton('Add Vertex After')
+        add_after_btn.setEnabled(False)
+        add_after_btn.clicked.connect(
+            lambda: self.addVertexAfter(set_id, area_id, vertices_list.currentRow(), 'areas'))
+        vertex_layout.addWidget(add_after_btn)
+        
+        # 정점이 선택되면 버튼들 활성화
+        vertices_list.currentRowChanged.connect(
+            lambda idx: [btn.setEnabled(idx >= 0) for btn in [move_btn, add_before_btn, add_after_btn]])
+        
+        self.properties_layout.addRow('Vertex Actions:', vertex_buttons)
 
         # "속성 업데이트" 버튼 추가
-        update_btn = QPushButton('Update Properties')
+        update_btn = QPushButton('Apply Properties')
         update_btn.clicked.connect(self.applyProperties)
         self.properties_layout.addRow(update_btn)
         
@@ -892,6 +939,10 @@ class MarkerEditor(QMainWindow):
     def setupVertexProperties(self, set_id, marker_id, marker_type, vertex_index):
         base_type = 'lines' if marker_type == 'line_vertex' else 'areas'
         marker = self.marker_data['sets'][set_id][base_type][marker_id]
+
+        # 소속 정보 표시
+        parent_info = QLabel(f"Vertex {vertex_index} of {marker['label']} ({marker_id})")
+        self.properties_layout.addRow('Parent:', parent_info)
 
         self.temp_properties = {
             'set_id': set_id,
@@ -917,8 +968,36 @@ class MarkerEditor(QMainWindow):
             )
             self.properties_layout.addRow(f'{coord.upper()}:', spin)
 
+        
+        # 선 편집 버튼들
+        edit_buttons = QWidget()
+        edit_layout = QVBoxLayout(edit_buttons)
+
+        move_btn = QPushButton('Move Vertex')
+        move_btn.clicked.connect(
+            lambda: self.startAddingVertex(set_id, marker_id, base_type, mode='move', vertex_index=vertex_index))
+        edit_layout.addWidget(move_btn)
+        
+        add_before_btn = QPushButton('Add Vertex Before')
+        add_before_btn.clicked.connect(
+            lambda: self.addVertexBefore(set_id, marker_id, vertex_index, base_type))
+        edit_layout.addWidget(add_before_btn)
+        
+        add_after_btn = QPushButton('Add Vertex After')
+        add_after_btn.clicked.connect(
+            lambda: self.addVertexAfter(set_id, marker_id, vertex_index, base_type))
+        edit_layout.addWidget(add_after_btn)
+
+        if marker_type == 'line_vertex':
+            split_btn = QPushButton('Split Line Here')
+            split_btn.clicked.connect(
+                lambda: self.splitLineAtVertex(set_id, marker_id, vertex_index))
+            edit_layout.addWidget(split_btn)
+            
+        self.properties_layout.addRow('Vertex Actions:', edit_buttons)
+
         # "속성 업데이트" 버튼 추가
-        update_btn = QPushButton('Update Properties')
+        update_btn = QPushButton('Apply Properties')
         update_btn.clicked.connect(lambda: self.applyProperties())
         self.properties_layout.addRow(update_btn)
             
@@ -1082,14 +1161,20 @@ class MarkerEditor(QMainWindow):
         
         self.statusBar().showMessage(msg)
         
-    def startAddingVertex(self, set_id, marker_id, marker_type):
+    def startAddingVertex(self, set_id, marker_id, marker_type, location='start', mode='add', vertex_index=None):
         self.adding_vertex = {
             'set_id': set_id,
             'marker_id': marker_id,
-            'type': marker_type
+            'type': marker_type,
+            'location': location,
+            'mode': mode,
+            'vertex_index': vertex_index
         }
         
-        self.statusBar().showMessage('Click to add new vertex')
+        if mode == 'add':
+            self.statusBar().showMessage('Click to add new vertex')
+        elif mode == 'move':
+            self.statusBar().showMessage('Click to set new vertex position')
 
     def mousePressEvent(self, event):
         if self.adding_marker:
@@ -1159,9 +1244,9 @@ class MarkerEditor(QMainWindow):
                 'x': [p[0] for p in points],
                 'y': [p[1] for p in points],
                 'z': [p[2] for p in points],
-                'strokeWeight': 2,
-                'strokeColor': 0x000000,
-                'strokeOpacity': 1.0,
+                'strokeWeight': 4,
+                'strokeColor': 0xFF0000,
+                'strokeOpacity': 0.7,
                 'label': f'New Line {marker_id}'
             }
             marker_type = 'lines'
@@ -1173,13 +1258,13 @@ class MarkerEditor(QMainWindow):
                 'world': selected_world,  # 선택된 world 사용
                 'x': [p[0] for p in points],
                 'z': [p[2] for p in points],
-                'ytop': 70,
+                'ytop': 65,
                 'ybottom': 65,
                 'strokeWeight': 2,
-                'strokeColor': 0x000000,
-                'strokeOpacity': 1.0,
+                'strokeColor': 0xFF0000,
+                'strokeOpacity': 0.7,
                 'fillColor': 0x0000FF,
-                'fillOpacity': 0.3,
+                'fillOpacity': 0.5,
                 'label': f'New Area {marker_id}'
             }
             marker_type = 'areas'
@@ -1197,17 +1282,127 @@ class MarkerEditor(QMainWindow):
         marker = self.marker_data['sets'][self.adding_vertex['set_id']][
             self.adding_vertex['type']][self.adding_vertex['marker_id']]
         
-        if self.adding_vertex['type'] == 'lines':
-            # 소수점 첫째 자리에서 반올림
-            marker['x'].append(world_pos[0])
-            marker['y'].append(world_pos[1])
-            marker['z'].append(world_pos[2])
-        else:  # areas
-            marker['x'].append(world_pos[0])
-            marker['z'].append(world_pos[2])
+        if self.adding_vertex['mode'] == 'add':
+            if self.adding_vertex['type'] == 'lines':
+                # 소수점 첫째 자리에서 반올림
+                if self.adding_vertex['location'] == 'start':
+                    marker['x'].insert(0, round(world_pos[0]))
+                    marker['y'].insert(0, round(world_pos[1]))
+                    marker['z'].insert(0, round(world_pos[2]))
+                else:
+                    marker['x'].append(round(world_pos[0]))
+                    marker['y'].append(round(world_pos[1]))
+                    marker['z'].append(round(world_pos[2]))
+            elif self.adding_vertex['type'] == 'areas':  # areas
+                if self.adding_vertex['location'] == 'start':
+                    marker['x'].insert(0, round(world_pos[0]))
+                    marker['z'].insert(0, round(world_pos[2]))
+                else:
+                    marker['x'].append(round(world_pos[0]))
+                    marker['z'].append(round(world_pos[2]))
+
+        elif self.adding_vertex['mode'] == 'move':
+            if self.adding_vertex['type'] == 'lines':
+                marker['x'][self.adding_vertex['vertex_index']] = round(world_pos[0])
+                marker['y'][self.adding_vertex['vertex_index']] = round(world_pos[1])
+                marker['z'][self.adding_vertex['vertex_index']] = round(world_pos[2])
+            elif self.adding_vertex['type'] == 'areas':
+                marker['x'][self.adding_vertex['vertex_index']] = round(world_pos[0])
+                marker['z'][self.adding_vertex['vertex_index']] = round(world_pos[2])
             
         self.updateDisplay()
 
+    def splitLineAtVertex(self, set_id, line_id, vertex_index):
+        line = self.marker_data['sets'][set_id]['lines'][line_id]
+        if len(line['x']) < 3:
+            QMessageBox.warning(
+                self,
+                'Cannot Split Line',
+                'Line must have at least 3 vertices to split.'
+            )
+            return
+
+        if vertex_index <= 0 or vertex_index >= len(line['x']) - 1:
+            QMessageBox.warning(
+                self,
+                'Cannot Split Line',
+                'Each Line must have at least 2 vertices.'
+            )
+            return  # 첫/끝 정점에서는 분할 불가
+
+        new_line_id = 'line_' + self.generateUniqueId()
+        
+        # 새 선 생성
+        new_line = {
+            'world': line['world'],
+            'x': line['x'][vertex_index:],
+            'y': line['y'][vertex_index:],
+            'z': line['z'][vertex_index:],
+            'strokeWeight': line['strokeWeight'],
+            'strokeColor': line['strokeColor'],
+            'strokeOpacity': line['strokeOpacity'],
+            'label': f"{line['label']} (split)"
+        }
+        
+        # 기존 선 수정
+        line['x'] = line['x'][:vertex_index + 1]
+        line['y'] = line['y'][:vertex_index + 1]
+        line['z'] = line['z'][:vertex_index + 1]
+        
+        # 새 선 추가
+        self.marker_data['sets'][set_id]['lines'][new_line_id] = new_line
+        self.updateDisplay() 
+
+
+    def addVertexBefore(self, set_id, id, vertex_index, marker_type):
+        if vertex_index <= 0:
+            if marker_type == 'lines':
+                self.startAddingVertex(set_id, id, 'lines', 'start')
+            else:
+                self.startAddingVertex(set_id, id, 'areas', 'start')
+            return  # 첫 정점 앞에 추가하는 경우, 클릭하는 위치에 추가되도록
+        
+        # 라인과 영역의 경우를 나누어 처리
+        marker = self.marker_data['sets'][set_id]['lines'][id] if marker_type == 'lines' else self.marker_data['sets'][set_id]['areas'][id]
+        # 이전 정점과 현재 정점의 중간 지점에 새 정점 추가
+        new_x = (marker['x'][vertex_index - 1] + marker['x'][vertex_index]) / 2
+        if marker_type == 'lines':
+            new_y = (marker['y'][vertex_index - 1] + marker['y'][vertex_index]) / 2
+        new_z = (marker['z'][vertex_index - 1] + marker['z'][vertex_index]) / 2
+        
+        marker['x'].insert(vertex_index, round(new_x))
+        if marker_type == 'lines':
+            marker['y'].insert(vertex_index, round(new_y))
+        marker['z'].insert(vertex_index, round(new_z))
+        
+        self.updateDisplay()
+
+    
+    def addVertexAfter(self, set_id, id, vertex_index, marker_type):
+        marker = self.marker_data['sets'][set_id]['lines'][id] if marker_type == 'lines' else self.marker_data['sets'][set_id]['areas'][id]
+
+        if vertex_index >= len(marker['x']) - 1:
+            if marker_type == 'lines':
+                self.startAddingVertex(set_id, id, 'lines', 'end')
+            else:
+                self.startAddingVertex(set_id, id, 'areas', 'end')
+            return  # 마지막 정점 뒤에 추가하는 경우, 클릭하는 위치에 추가되도록
+        
+        # 현재 정점과 다음 정점의 중간 지점에 새 정점 추가
+        new_x = (marker['x'][vertex_index] + marker['x'][vertex_index + 1]) / 2
+        if marker_type == 'lines':
+            new_y = (marker['y'][vertex_index] + marker['y'][vertex_index + 1]) / 2
+        new_z = (marker['z'][vertex_index] + marker['z'][vertex_index + 1]) / 2
+        
+        marker['x'].insert(vertex_index + 1, round(new_x))
+        if marker_type == 'lines':
+            marker['y'].insert(vertex_index + 1, round(new_y))
+        marker['z'].insert(vertex_index + 1, round(new_z))
+        
+        self.updateDisplay()
+
+
+    """
     def splitLine(self, set_id, line_id):
         line = self.marker_data['sets'][set_id]['lines'][line_id]
         if len(line['x']) < 3:
@@ -1242,7 +1437,7 @@ class MarkerEditor(QMainWindow):
         
         if dialog.exec_() == QDialog.Accepted and vertex_list.currentRow() != -1:
             split_index = vertex_list.currentRow() + 1
-            new_line_id = self.generateUniqueId()
+            new_line_id = 'line_' + self.generateUniqueId()
             
             # Create new line with vertices after split point
             new_line = {
@@ -1264,6 +1459,7 @@ class MarkerEditor(QMainWindow):
             # Add new line to set
             self.marker_data['sets'][set_id]['lines'][new_line_id] = new_line
             self.updateDisplay()
+    """
 
     def generateUniqueId(self):
         return f'{uuid.uuid4().hex[:8]}'
