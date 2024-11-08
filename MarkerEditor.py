@@ -686,7 +686,7 @@ class MarkerEditor(QMainWindow):
                 spin.setRange(-64, 319)
             spin.setValue(marker[coord])
             spin.valueChanged.connect(
-                lambda val, c=coord: self.temp_properties['properties'].update({c: val}))
+                lambda val, c=coord: self.temp_properties['properties'].update({c: float(val)}))
             self.properties_layout.addRow(f'{coord.upper()}:', spin)
         
         # Icon
@@ -883,7 +883,7 @@ class MarkerEditor(QMainWindow):
             spin.setRange(-64, 319)
             spin.setValue(area[prop])
             spin.valueChanged.connect(
-                lambda val, p=prop: self.temp_properties['properties'].update({p: val}))
+                lambda val, p=prop: self.temp_properties['properties'].update({p: float(val)}))
             self.properties_layout.addRow(prop + ':', spin)
             
         # Vertices list
@@ -964,7 +964,7 @@ class MarkerEditor(QMainWindow):
                 spin.setRange(-64, 319)
             spin.setValue(marker[coord][vertex_index])
             spin.valueChanged.connect(
-                lambda val, c=coord: update_coord(val, c)
+                lambda val, c=coord: update_coord(float(val), c)
             )
             self.properties_layout.addRow(f'{coord.upper()}:', spin)
 
@@ -1181,7 +1181,7 @@ class MarkerEditor(QMainWindow):
             pos = self.view.mapToScene(self.view.mapFromGlobal(event.globalPos()))
             world_pos = self.screenToWorld(pos.x(), pos.y())
 
-            world_pos = (round(world_pos[0]), round(world_pos[1]), round(world_pos[2]))
+            world_pos = (float(round(world_pos[0])), float(round(world_pos[1])), float(round(world_pos[2])))
             
             self.adding_marker['points'].append(world_pos)
 
@@ -1231,6 +1231,7 @@ class MarkerEditor(QMainWindow):
                 'x': x,
                 'y': y,
                 'z': z,
+                'markup': False,
                 'icon': 'default',
                 'label': f'New Point {marker_id}'
             }
@@ -1244,6 +1245,7 @@ class MarkerEditor(QMainWindow):
                 'x': [p[0] for p in points],
                 'y': [p[1] for p in points],
                 'z': [p[2] for p in points],
+                'markup': False,
                 'strokeWeight': 4,
                 'strokeColor': 0xFF0000,
                 'strokeOpacity': 0.7,
@@ -1258,13 +1260,14 @@ class MarkerEditor(QMainWindow):
                 'world': selected_world,  # 선택된 world 사용
                 'x': [p[0] for p in points],
                 'z': [p[2] for p in points],
-                'ytop': 65,
-                'ybottom': 65,
+                'markup': False,
+                'ytop': 65.0,
+                'ybottom': 65.0,
                 'strokeWeight': 2,
                 'strokeColor': 0xFF0000,
-                'strokeOpacity': 0.7,
+                'strokeOpacity': 0.8,
                 'fillColor': 0x0000FF,
-                'fillOpacity': 0.5,
+                'fillOpacity': 0.35,
                 'label': f'New Area {marker_id}'
             }
             marker_type = 'areas'
@@ -1286,29 +1289,29 @@ class MarkerEditor(QMainWindow):
             if self.adding_vertex['type'] == 'lines':
                 # 소수점 첫째 자리에서 반올림
                 if self.adding_vertex['location'] == 'start':
-                    marker['x'].insert(0, round(world_pos[0]))
-                    marker['y'].insert(0, round(world_pos[1]))
-                    marker['z'].insert(0, round(world_pos[2]))
+                    marker['x'].insert(0, float(round(world_pos[0])))
+                    marker['y'].insert(0, float(round(world_pos[1])))
+                    marker['z'].insert(0, float(round(world_pos[2])))
                 else:
-                    marker['x'].append(round(world_pos[0]))
-                    marker['y'].append(round(world_pos[1]))
-                    marker['z'].append(round(world_pos[2]))
+                    marker['x'].append(float(round(world_pos[0])))
+                    marker['y'].append(float(round(world_pos[1])))
+                    marker['z'].append(float(round(world_pos[2])))
             elif self.adding_vertex['type'] == 'areas':  # areas
                 if self.adding_vertex['location'] == 'start':
-                    marker['x'].insert(0, round(world_pos[0]))
-                    marker['z'].insert(0, round(world_pos[2]))
+                    marker['x'].insert(0, float(round(world_pos[0])))
+                    marker['z'].insert(0, float(round(world_pos[2])))
                 else:
-                    marker['x'].append(round(world_pos[0]))
-                    marker['z'].append(round(world_pos[2]))
+                    marker['x'].append(float(round(world_pos[0])))
+                    marker['z'].append(float(round(world_pos[2])))
 
         elif self.adding_vertex['mode'] == 'move':
             if self.adding_vertex['type'] == 'lines':
-                marker['x'][self.adding_vertex['vertex_index']] = round(world_pos[0])
-                marker['y'][self.adding_vertex['vertex_index']] = round(world_pos[1])
-                marker['z'][self.adding_vertex['vertex_index']] = round(world_pos[2])
+                marker['x'][self.adding_vertex['vertex_index']] = float(round(world_pos[0]))
+                marker['y'][self.adding_vertex['vertex_index']] = float(round(world_pos[1]))
+                marker['z'][self.adding_vertex['vertex_index']] = float(round(world_pos[2]))
             elif self.adding_vertex['type'] == 'areas':
-                marker['x'][self.adding_vertex['vertex_index']] = round(world_pos[0])
-                marker['z'][self.adding_vertex['vertex_index']] = round(world_pos[2])
+                marker['x'][self.adding_vertex['vertex_index']] = float(round(world_pos[0]))
+                marker['z'][self.adding_vertex['vertex_index']] = float(round(world_pos[2]))
             
         self.updateDisplay()
 
@@ -1338,10 +1341,11 @@ class MarkerEditor(QMainWindow):
             'x': line['x'][vertex_index:],
             'y': line['y'][vertex_index:],
             'z': line['z'][vertex_index:],
+            'markup': False,
             'strokeWeight': line['strokeWeight'],
             'strokeColor': line['strokeColor'],
             'strokeOpacity': line['strokeOpacity'],
-            'label': f"{line['label']} (split)"
+            'label': line['label']
         }
         
         # 기존 선 수정
@@ -1370,10 +1374,10 @@ class MarkerEditor(QMainWindow):
             new_y = (marker['y'][vertex_index - 1] + marker['y'][vertex_index]) / 2
         new_z = (marker['z'][vertex_index - 1] + marker['z'][vertex_index]) / 2
         
-        marker['x'].insert(vertex_index, round(new_x))
+        marker['x'].insert(vertex_index, float(round(new_x)))
         if marker_type == 'lines':
-            marker['y'].insert(vertex_index, round(new_y))
-        marker['z'].insert(vertex_index, round(new_z))
+            marker['y'].insert(vertex_index, float(round(new_y)))
+        marker['z'].insert(vertex_index, float(round(new_z)))
         
         self.updateDisplay()
 
@@ -1394,10 +1398,10 @@ class MarkerEditor(QMainWindow):
             new_y = (marker['y'][vertex_index] + marker['y'][vertex_index + 1]) / 2
         new_z = (marker['z'][vertex_index] + marker['z'][vertex_index + 1]) / 2
         
-        marker['x'].insert(vertex_index + 1, round(new_x))
+        marker['x'].insert(vertex_index + 1, float(round(new_x)))
         if marker_type == 'lines':
-            marker['y'].insert(vertex_index + 1, round(new_y))
-        marker['z'].insert(vertex_index + 1, round(new_z))
+            marker['y'].insert(vertex_index + 1, float(round(new_y)))
+        marker['z'].insert(vertex_index + 1, float(round(new_z)))
         
         self.updateDisplay()
 
