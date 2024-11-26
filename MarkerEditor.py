@@ -161,7 +161,7 @@ class MarkerEditor(QMainWindow):
         </ul>
 
         <p>Version 0.0.1</p>
-        <p>ⓒ 2024 <a href="https://www.youtube.com/@moonsvr">MoonServer Studios</a>. All rights reserved.</p>
+        <p>ⓒ 2024 <a href="https://www.youtube.com/@moonsvr">MoonServer Studios</a>.</p>
         <hr>
         <p>
         <a href="https://github.com/moon44432/dmarker-editor">Source code</a><br>
@@ -765,6 +765,12 @@ class MarkerEditor(QMainWindow):
         opacity_spin.valueChanged.connect(
             lambda val: self.temp_properties['properties'].update({'strokeOpacity': val}))
         self.properties_layout.addRow('Opacity:', opacity_spin)
+
+        # Length of line
+        line_length = round(
+            sum([((line['x'][i] - line['x'][i-1])**2 + (line['y'][i] - line['y'][i-1])**2 + (line['z'][i] - line['z'][i-1])**2)**0.5 
+                 for i in range(1, len(line['x']))]), 1)
+        self.properties_layout.addRow('Length:', QLabel(str(line_length)))
         
         # Vertices list
         vertices_label = QLabel('Vertices:')
