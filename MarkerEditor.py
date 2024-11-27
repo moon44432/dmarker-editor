@@ -1043,7 +1043,10 @@ class MarkerEditor(QMainWindow):
             f'Select {color_type}'
         )
         if color.isValid():
-            self.temp_properties['properties'][color_type] = color.rgb()
+            hexcolor = '%08x' % color.rgb()
+            deccolor = int(hexcolor[2:], 16)
+            print(f"Selected color: {hexcolor}({deccolor})")
+            self.temp_properties['properties'][color_type] = deccolor
 
 
     def applyProperties(self):
