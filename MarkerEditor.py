@@ -747,9 +747,17 @@ class MarkerEditor(QMainWindow):
         self.properties_layout.addRow('Set:', set_combo)
         
         # Style properties
+        # add small square with current line color
+        # convert dec color to hex
+        hexcolor = '#%06x' % line['strokeColor']
+        color_square = QLabel(hexcolor)
+        color_square.setStyleSheet(
+            f"background-color: {hexcolor}; border: 1px solid black")
+        self.properties_layout.addRow('Stroke Color:', color_square)
+
         color_btn = QPushButton('Change Color')
         color_btn.clicked.connect(lambda: self.selectColor('strokeColor'))
-        self.properties_layout.addRow('Stroke Color:', color_btn)
+        self.properties_layout.addRow('', color_btn)
         
         weight_spin = QSpinBox()
         weight_spin.setRange(1, 20)
@@ -863,13 +871,26 @@ class MarkerEditor(QMainWindow):
         self.properties_layout.addRow('Set:', set_combo)
         
         # Style properties
+
+        hexcolor = '#%06x' % area['strokeColor']
+        color_square = QLabel(hexcolor)
+        color_square.setStyleSheet(
+            f"background-color: {hexcolor}; border: 1px solid black")
+        self.properties_layout.addRow('Stroke Color:', color_square)
+
         stroke_color_btn = QPushButton('Change Stroke Color')
         stroke_color_btn.clicked.connect(lambda: self.selectColor('strokeColor'))
-        self.properties_layout.addRow('Stroke Color:', stroke_color_btn)
+        self.properties_layout.addRow('', stroke_color_btn)
+
+        hexcolor = '#%06x' % area['fillColor']
+        color_square = QLabel(hexcolor)
+        color_square.setStyleSheet(
+            f"background-color: {hexcolor}; border: 1px solid black")
+        self.properties_layout.addRow('Fill Color:', color_square)
         
         fill_color_btn = QPushButton('Change Fill Color')
         fill_color_btn.clicked.connect(lambda: self.selectColor('fillColor'))
-        self.properties_layout.addRow('Fill Color:', fill_color_btn)
+        self.properties_layout.addRow('', fill_color_btn)
         
         for prop in ['strokeWeight', 'strokeOpacity', 'fillOpacity']:
             spin = QDoubleSpinBox() if 'Opacity' in prop else QSpinBox()
@@ -1022,7 +1043,10 @@ class MarkerEditor(QMainWindow):
             f'Select {color_type}'
         )
         if color.isValid():
-            self.temp_properties['properties'][color_type] = color.rgb()
+            hexcolor = '%08x' % color.rgb()
+            deccolor = int(hexcolor[2:], 16)
+            print(f"Selected color: {hexcolor}({deccolor})")
+            self.temp_properties['properties'][color_type] = deccolor
 
 
     def applyProperties(self):
