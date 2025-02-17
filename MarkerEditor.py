@@ -979,6 +979,17 @@ class MarkerEditor(QMainWindow):
         edit_buttons = QWidget()
         edit_layout = QVBoxLayout(edit_buttons)
 
+        # "속성 업데이트" 버튼 추가
+        update_btn = QPushButton('Apply')
+        update_btn.clicked.connect(lambda: self.applyProperties())
+        self.properties_layout.addRow(update_btn)
+            
+        # Delete vertex button
+        delete_btn = QPushButton('Delete Vertex')
+        delete_btn.clicked.connect(
+            lambda: self.deleteVertex(set_id, marker_id, base_type, vertex_index))
+        self.properties_layout.addRow(delete_btn)
+
         move_btn = QPushButton('Move Vertex')
         move_btn.clicked.connect(
             lambda: self.startAddingVertex(set_id, marker_id, base_type, mode='move', vertex_index=vertex_index))
@@ -1001,17 +1012,6 @@ class MarkerEditor(QMainWindow):
             edit_layout.addWidget(split_btn)
             
         self.properties_layout.addRow('Vertex Actions:', edit_buttons)
-
-        # "속성 업데이트" 버튼 추가
-        update_btn = QPushButton('Apply Properties')
-        update_btn.clicked.connect(lambda: self.applyProperties())
-        self.properties_layout.addRow(update_btn)
-            
-        # Delete vertex button
-        delete_btn = QPushButton('Delete Vertex')
-        delete_btn.clicked.connect(
-            lambda: self.deleteVertex(set_id, marker_id, base_type, vertex_index))
-        self.properties_layout.addRow(delete_btn)
 
 
     def selectColor(self, color_type):
