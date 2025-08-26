@@ -684,7 +684,7 @@ class MarkerEditor(QMainWindow):
                 spin.setRange(-29999984, 29999984)
             else:
                 spin.setRange(-64, 319)
-            spin.setValue(marker[coord])
+            spin.setValue(int(marker[coord]))
             spin.valueChanged.connect(
                 lambda val, c=coord: self.temp_properties['properties'].update({c: float(val)}))
             self.properties_layout.addRow(f'{coord.upper()}:', spin)
@@ -989,7 +989,7 @@ class MarkerEditor(QMainWindow):
                 spin.setRange(-29999984, 29999984)
             else:
                 spin.setRange(-64, 319)
-            spin.setValue(marker[coord][vertex_index])
+            spin.setValue(int(marker[coord][vertex_index]))
             spin.valueChanged.connect(
                 lambda val, c=coord: update_coord(float(val), c)
             )
